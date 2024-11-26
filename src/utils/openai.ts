@@ -3,6 +3,7 @@ import type { ClientRequest, IncomingMessage } from 'http';
 import type {
 	CreateChatCompletionRequest,
 	CreateChatCompletionResponse,
+	ChatCompletionRequestMessage,
 } from 'openai';
 import {
 	type TiktokenModel,
@@ -108,7 +109,6 @@ const createChatCompletion = async (
 const sanitizeMessage = (message: string) =>
 	message
 		.trim()
-		.replace(/[\n\r]/g, '')
 		.replace(/(\w)\.$/, '$1');
 
 const deduplicateMessages = (array: string[]) => Array.from(new Set(array));
@@ -139,23 +139,33 @@ export const generateCommitMessage = async (
 	maxLength: number,
 	type: CommitType,
 	timeout: number,
-	proxy?: string
+	proxy?: string,
+	explanation?: string
 ) => {
 	try {
+		const messages: ChatCompletionRequestMessage[] = [
+			{
+				role: 'system',
+				content: generatePrompt(locale, maxLength, type),
+			},
+			{
+				role: 'user',
+				content: diff,
+			},
+		];
+
+		if (explanation) {
+			messages.push({
+				role: 'user',
+				content: `Additional context: ${explanation}`,
+			});
+		}
+
 		const completion = await createChatCompletion(
 			apiKey,
 			{
 				model,
-				messages: [
-					{
-						role: 'system',
-						content: generatePrompt(locale, maxLength, type),
-					},
-					{
-						role: 'user',
-						content: diff,
-					},
-				],
+				messages,
 				temperature: 0.7,
 				top_p: 1,
 				frequency_penalty: 0,

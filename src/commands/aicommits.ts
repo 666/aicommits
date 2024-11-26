@@ -7,6 +7,7 @@ import {
 	select,
 	confirm,
 	isCancel,
+	text,
 } from '@clack/prompts';
 import {
 	assertGitRepo,
@@ -51,6 +52,16 @@ export default async (
 				.join('\n')}`
 		);
 
+		const explanation = await text({
+			message: 'Optional: Provide additional context about your changes',
+			placeholder: 'Press Enter to skip',
+		});
+
+		if (isCancel(explanation)) {
+			outro('Commit cancelled');
+			return;
+		}
+
 		const { env } = process;
 		const config = await getConfig({
 			OPENAI_KEY: env.OPENAI_KEY || env.OPENAI_API_KEY,
@@ -73,7 +84,8 @@ export default async (
 				config['max-length'],
 				config.type,
 				config.timeout,
-				config.proxy
+				config.proxy,
+				explanation as string || undefined
 			);
 		} finally {
 			s.stop('Changes analyzed');

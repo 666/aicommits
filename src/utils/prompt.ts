@@ -1,11 +1,11 @@
 import type { CommitType } from './config.js';
 
 const commitTypeFormats: Record<CommitType, string> = {
-	'': '<commit message>',
-	conventional: '<type>(<optional scope>): <commit message>',
+	'': 'commit message',
+	conventional: '<type>(<optional scope>): <description>',
 };
 const specifyCommitFormat = (type: CommitType) =>
-	`The output response must be in format:\n${commitTypeFormats[type]}`;
+	`Replace the placeholders in this format with actual content:\n${commitTypeFormats[type]}`;
 
 const commitTypes: Record<CommitType, string> = {
 	'': '',
@@ -44,10 +44,26 @@ export const generatePrompt = (
 	type: CommitType
 ) =>
 	[
-		'Generate a concise git commit message written in present tense for the following code diff with the given specifications below:',
-		`Message language: ${locale}`,
-		`Commit message must be a maximum of ${maxLength} characters.`,
-		'Exclude anything unnecessary such as translation. Your entire response will be passed directly into git commit.',
+		'Generate a git commit message following these guidelines:',
+		'1. First line: A clear, objective summary of WHAT was changed',
+		`   - Maximum ${maxLength} characters`,
+		'   - Written in present tense',
+		'   - No period at the end',
+		'',
+		'2. Followed by TWO blank lines',
+		'',
+		'3. Then a detailed description explaining:',
+		'   - WHY the change was made (the rationale)',
+		'   - Any important implementation details that future developers should know',
+		'   - Breaking changes or deprecations, if any',
+		'   - Each paragraph should focus on one aspect',
+		'',
+		'4. Technical details:',
+		'   - Use backticks (`) for code elements',
+		`   - Output in ${locale} language`,
+		'   - No unnecessary translations or metadata',
+		'   - Do not include placeholder text like <commit message> in the output',
+		'',
 		commitTypes[type],
 		specifyCommitFormat(type),
 	]
